@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 
-import UserContext from "../context/UserContext";
-
+import { useUser } from "../context/UserContext"; 
 const PostDetailPage = () => {
   const { postId } = useParams();
-  const { userInfo } = useContext(UserContext);
+  const { userInfo } = useUser
 
   const [post, setPost] = useState([]);
   const getPostDetail = () => {

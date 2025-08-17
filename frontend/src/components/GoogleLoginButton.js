@@ -1,31 +1,67 @@
+// import React from "react";
+// import { useGoogleLogin } from "@react-oauth/google";
+// import GoogleButton from "react-google-button";
+// import { useNavigate } from 'react-router-dom'
+
+// const GoogleLoginButton = () => {
+//   const navigate = useNavigate()
+//   const handleSuccess = (codeResponse) => {
+//     const authorizationCode = codeResponse.code;
+
+//     fetch("/user/login-with-google/", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({ code: authorizationCode }),
+//     })
+//       .then((response) => response.json())
+//       .then((data) => {
+//         localStorage.setItem("access_token", data["access_token"]);
+//         localStorage.setItem("username", data["username"]);
+//         navigate('/')
+//         window.location.reload();
+//       })
+//       .catch((error) => {
+//         // Handle errors in communicating with your backend server
+//         console.error("Error exchanging authorization code:", error);
+//       });
+//   };
+
+//   const login = useGoogleLogin({
+//     onSuccess: handleSuccess,
+//     flow: "auth-code",
+//   });
+
+//   return (
+//     <div>
+//       {/* <button onClick={() => login()}>Sign in with Google 🚀</button> */}
+//       <GoogleButton onClick={login} label="Sign in with Google" />
+//     </div>
+//   );
+// };
+
+// export default GoogleLoginButton;
+
 import React from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import GoogleButton from "react-google-button";
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
+import { loginWithGoogle } from "../services/apiService";
+import { useUser } from "../context/UserContext";
 
 const GoogleLoginButton = () => {
-  const navigate = useNavigate()
-  const handleSuccess = (codeResponse) => {
-    const authorizationCode = codeResponse.code;
+  const navigate = useNavigate();
+  const { updateUserInfo } = useUser();
 
-    fetch("/user/login-with-google/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ code: authorizationCode }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        localStorage.setItem("access_token", data["access_token"]);
-        localStorage.setItem("username", data["username"]);
-        navigate('/')
-        window.location.reload();
-      })
-      .catch((error) => {
-        // Handle errors in communicating with your backend server
-        console.error("Error exchanging authorization code:", error);
-      });
+  const handleSuccess = async (codeResponse) => {
+    try {
+      const data = await loginWithGoogle(codeResponse.code);
+      updateUserInfo(data.access_token, data.username);
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
 
   const login = useGoogleLogin({
@@ -33,12 +69,7 @@ const GoogleLoginButton = () => {
     flow: "auth-code",
   });
 
-  return (
-    <div>
-      {/* <button onClick={() => login()}>Sign in with Google 🚀</button> */}
-      <GoogleButton onClick={login} label="Sign in with Google" />
-    </div>
-  );
+  return <GoogleButton onClick={login} label="Sign in with Google" />;
 };
 
 export default GoogleLoginButton;

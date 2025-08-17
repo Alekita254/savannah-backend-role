@@ -1,5 +1,4 @@
 import React, { useContext } from "react";
-import UserContext from "../context/UserContext";
 import { Link } from "react-router-dom";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 import {
@@ -26,9 +25,10 @@ import {
   Favorite,
 } from "@mui/icons-material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useUser } from "../context/UserContext"; 
 
 const Header = () => {
-  const { userInfo } = useContext(UserContext);
+  const { userInfo } = useUser();
   const cartItemCount = 3;
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [categoryAnchorEl, setCategoryAnchorEl] = React.useState(null);
