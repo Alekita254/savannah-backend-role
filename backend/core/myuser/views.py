@@ -84,18 +84,66 @@ class LoginView(APIView):
 
 class CustomerProfileView(APIView):
     """
-    Handles both retrieval and updates of customer profile information
+    Handles retrieval, creation and updates of customer profile information
     """
     def get(self, request):
         if not request.user.is_authenticated or not hasattr(request.user, 'customer'):
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'error': 'Authentication required or customer profile not found'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         serializer = CustomerProfileSerializer(request.user.customer)
         return Response(serializer.data)
 
+    def post(self, request):
+        """Create customer profile after initial signup"""
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if profile already exists
+        if hasattr(request.user, 'customer'):
+            return Response(
+                {'error': 'Customer profile already exists'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = CustomerProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            # Create customer profile linked to the user
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request):
+        """Full update of customer profile"""
         if not request.user.is_authenticated or not hasattr(request.user, 'customer'):
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'error': 'Authentication required or customer profile not found'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        customer = request.user.customer
+        serializer = CustomerProfileSerializer(
+            customer,
+            data=request.data
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        """Partial update of customer profile"""
+        if not request.user.is_authenticated or not hasattr(request.user, 'customer'):
+            return Response(
+                {'error': 'Authentication required or customer profile not found'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         customer = request.user.customer
         serializer = CustomerProfileSerializer(
