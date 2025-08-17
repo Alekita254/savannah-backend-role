@@ -45,3 +45,8 @@ htmlcov/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+*.webp
+*.png
+*.jpeg
+*.jpg 
