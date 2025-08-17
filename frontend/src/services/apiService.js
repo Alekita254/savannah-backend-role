@@ -60,3 +60,56 @@ export const saveProfile = async (access_token, profileData) => {
   }
   return await response.json();
 };
+
+export const fetchCategories = async () => {
+  try {
+    const response = await fetch("/products/categories/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(localStorage.getItem('access_token') && {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        })
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Create a map of all categories by ID
+    const categoryMap = data.reduce((map, category) => {
+      map[category.id] = { ...category, children: [] };
+      return map;
+    }, {});
+
+    // Build the hierarchy (supports up to 4 levels)
+    const rootCategories = [];
+    
+    data.forEach(category => {
+      if (category.parent === null) {
+        // Level 1 (Root categories)
+        rootCategories.push(categoryMap[category.id]);
+      } else if (categoryMap[category.parent]) {
+        // Level 2-4 (Nested categories)
+        categoryMap[category.parent].children.push(categoryMap[category.id]);
+        
+        // Sort children alphabetically
+        categoryMap[category.parent].children.sort((a, b) => 
+          a.name.localeCompare(b.name)
+        );
+      }
+    });
+
+    // Sort root categories alphabetically
+    rootCategories.sort((a, b) => a.name.localeCompare(b.name));
+    
+    return rootCategories;
+    
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    throw new Error("Failed to load categories. Please try again later.");
+  }
+};

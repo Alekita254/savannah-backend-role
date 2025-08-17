@@ -1,6 +1,5 @@
-import React, { useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import GoogleLoginButton from "../components/GoogleLoginButton";
 import {
   AppBar,
   Toolbar,
@@ -14,6 +13,10 @@ import {
   Box,
   Avatar,
   ListItemIcon,
+  ListItemText,
+  Collapse,
+  CircularProgress,
+  Alert
 } from "@mui/material";
 import {
   ShoppingCart,
@@ -23,48 +26,102 @@ import {
   Category,
   ExitToApp,
   Favorite,
+  ExpandMore,
+  ExpandLess
 } from "@mui/icons-material";
-import MenuIcon from "@mui/icons-material/Menu";
-import { useUser } from "../context/UserContext"; 
+import { useUser } from "../context/UserContext";
+import { fetchCategories } from "../services/apiService";
+
+const CategoryMenuItem = ({ category, depth = 0, onClose }) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = category.children.length > 0;
+  const maxDepth = 4; // Maximum depth level
+
+  return (
+    <>
+      <MenuItem
+        sx={{ 
+          pl: 2 + depth * 2,
+          minWidth: 250,
+          ...(depth >= maxDepth && { backgroundColor: '#f5f5f5' }) // Visual cue for max depth
+        }}
+        onClick={() => {
+          if (!hasChildren) onClose();
+        }}
+      >
+        <ListItemText primary={category.name} />
+        {hasChildren && (
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+          >
+            {expanded ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        )}
+      </MenuItem>
+      
+      {hasChildren && depth < maxDepth && (
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          <Box sx={{ ml: 2 }}>
+            {category.children.map((child) => (
+              <CategoryMenuItem 
+                key={child.id} 
+                category={child} 
+                depth={depth + 1}
+                onClose={onClose}
+              />
+            ))}
+          </Box>
+        </Collapse>
+      )}
+    </>
+  );
+};
 
 const Header = () => {
   const { userInfo } = useUser();
-  const cartItemCount = 3;
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [categoryAnchorEl, setCategoryAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
-  const categoryOpen = Boolean(categoryAnchorEl);
+  const [categories, setCategories] = useState([]);
+  const [categoryAnchor, setCategoryAnchor] = useState(null);
+  const [userAnchor, setUserAnchor] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCategoryClick = (event) => {
-    setCategoryAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-    setCategoryAnchorEl(null);
-  };
+  useEffect(() => {
+    const loadCategories = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchCategories();
+        setCategories(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadCategories();
+  }, []);
 
   return (
-    <AppBar position="static" color="default" elevation={0}>
+    <AppBar position="static" color="default" elevation={1}>
       <Toolbar sx={{ justifyContent: "space-between" }}>
+        {/* Left side - Logo/Brand */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <IconButton edge="start" color="inherit" aria-label="menu">
-            <MenuIcon />
-          </IconButton>
           <Typography
             variant="h6"
             component={Link}
             to="/"
-            sx={{ flexGrow: 1, textDecoration: "none", color: "inherit" }}
+            sx={{ textDecoration: "none", color: "inherit" }}
           >
-            Savannah Backend Role
+            Savannah Store (Backend Dev Role)
           </Typography>
         </Box>
 
+        {/* Center - Navigation */}
         <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
           <Button component={Link} to="/" startIcon={<Home />}>
             Home
@@ -72,33 +129,52 @@ const Header = () => {
           <Button component={Link} to="/products" startIcon={<ShoppingBasket />}>
             Products
           </Button>
+          
           <Button
-            aria-controls="category-menu"
-            aria-haspopup="true"
-            onClick={handleCategoryClick}
             startIcon={<Category />}
+            onClick={(e) => setCategoryAnchor(e.currentTarget)}
+            disabled={loading}
           >
             Categories
+            {loading && <CircularProgress size={14} sx={{ ml: 1 }} />}
           </Button>
+
           <Menu
-            id="category-menu"
-            anchorEl={categoryAnchorEl}
-            open={categoryOpen}
-            onClose={handleClose}
+            anchorEl={categoryAnchor}
+            open={Boolean(categoryAnchor)}
+            onClose={() => setCategoryAnchor(null)}
+            PaperProps={{
+              style: {
+                maxHeight: '70vh',
+                width: '300px',
+                overflow: 'auto',
+              },
+            }}
           >
-            <MenuItem component={Link} to="/category/electronics" onClick={handleClose}>
-              Electronics
-            </MenuItem>
-            <MenuItem component={Link} to="/category/clothing" onClick={handleClose}>
-              Clothing
-            </MenuItem>
-            <MenuItem component={Link} to="/category/books" onClick={handleClose}>
-              Books
-            </MenuItem>
-            <Divider />
-            <MenuItem component={Link} to="/categories" onClick={handleClose}>
-              All Categories
-            </MenuItem>
+            {error ? (
+              <Alert severity="error" sx={{ mx: 2, my: 1 }}>
+                {error}
+              </Alert>
+            ) : (
+              <>
+                {categories.map((category) => (
+                  <CategoryMenuItem
+                    key={category.id}
+                    category={category}
+                    onClose={() => setCategoryAnchor(null)}
+                  />
+                ))}
+                <Divider />
+                <MenuItem 
+                  component={Link} 
+                  to="/categories" 
+                  onClick={() => setCategoryAnchor(null)}
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Browse All Categories
+                </MenuItem>
+              </>
+            )}
           </Menu>
 
           {userInfo.access_token && (
@@ -108,9 +184,10 @@ const Header = () => {
           )}
         </Box>
 
+        {/* Right side - User/Cart */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton component={Link} to="/cart" color="inherit">
-            <Badge badgeContent={cartItemCount} color="error">
+          <IconButton component={Link} to="/cart">
+            <Badge badgeContent={userInfo.cartCount || 0} color="error">
               <ShoppingCart />
             </Badge>
           </IconButton>
@@ -118,58 +195,44 @@ const Header = () => {
           {userInfo.access_token ? (
             <>
               <Button
-                aria-controls="user-menu"
-                aria-haspopup="true"
-                onClick={handleClick}
                 startIcon={<Person />}
                 endIcon={
                   <Avatar sx={{ width: 24, height: 24, ml: 1 }}>
-                    {userInfo?.username?.charAt(0).toUpperCase()}
+                    {userInfo.username?.charAt(0).toUpperCase()}
                   </Avatar>
                 }
+                onClick={(e) => setUserAnchor(e.currentTarget)}
               >
-                {userInfo?.username}
+                {userInfo.username}
               </Button>
               <Menu
-                id="user-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
+                anchorEl={userAnchor}
+                open={Boolean(userAnchor)}
+                onClose={() => setUserAnchor(null)}
               >
-                <MenuItem component={Link} to="/profile" onClick={handleClose}>
-                  <ListItemIcon>
-                    <Person fontSize="small" />
-                  </ListItemIcon>
-                  My Profile
+                <MenuItem component={Link} to="/profile">
+                  <ListItemIcon><Person fontSize="small" /></ListItemIcon>
+                  Profile
                 </MenuItem>
-                <MenuItem component={Link} to="/orders" onClick={handleClose}>
-                  <ListItemIcon>
-                    <ShoppingBasket fontSize="small" />
-                  </ListItemIcon>
-                  My Orders
+                <MenuItem component={Link} to="/orders">
+                  <ListItemIcon><ShoppingBasket fontSize="small" /></ListItemIcon>
+                  Orders
                 </MenuItem>
-                <MenuItem component={Link} to="/wishlist" onClick={handleClose}>
-                  <ListItemIcon>
-                    <Favorite fontSize="small" />
-                  </ListItemIcon>
+                <MenuItem component={Link} to="/wishlist">
+                  <ListItemIcon><Favorite fontSize="small" /></ListItemIcon>
                   Wishlist
                 </MenuItem>
                 <Divider />
-                <MenuItem component={Link} to="/logout" onClick={handleClose}>
-                  <ListItemIcon>
-                    <ExitToApp fontSize="small" />
-                  </ListItemIcon>
+                <MenuItem component={Link} to="/logout">
+                  <ListItemIcon><ExitToApp fontSize="small" /></ListItemIcon>
                   Logout
                 </MenuItem>
               </Menu>
             </>
           ) : (
-            <>
-              <Button component={Link} to="/login" variant="outlined">
-                Login
-              </Button>
-              <GoogleLoginButton />
-            </>
+            <Button component={Link} to="/login" variant="outlined">
+              Login
+            </Button>
           )}
         </Box>
       </Toolbar>
