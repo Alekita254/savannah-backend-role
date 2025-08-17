@@ -87,14 +87,21 @@ class CustomerProfileView(APIView):
     Handles retrieval, creation and updates of customer profile information
     """
     def get(self, request):
-        if not request.user.is_authenticated or not hasattr(request.user, 'customer'):
+        if not request.user.is_authenticated:
             return Response(
-                {'error': 'Authentication required or customer profile not found'},
+                {'error': 'Authentication required'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        serializer = CustomerProfileSerializer(request.user.customer)
-        return Response(serializer.data)
+        # Always return basic user data
+        user_data = UserSerializer(request.user).data
+        
+        # Add profile data if exists
+        if hasattr(request.user, 'customer'):
+            profile_data = CustomerProfileSerializer(request.user.customer).data
+            user_data.update(profile_data)
+        
+        return Response(user_data)
 
     def post(self, request):
         """Create customer profile after initial signup"""
@@ -115,15 +122,25 @@ class CustomerProfileView(APIView):
         if serializer.is_valid():
             # Create customer profile linked to the user
             serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            # Return combined user and profile data
+            user_data = UserSerializer(request.user).data
+            user_data.update(serializer.data)
+            return Response(user_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
         """Full update of customer profile"""
-        if not request.user.is_authenticated or not hasattr(request.user, 'customer'):
+        if not request.user.is_authenticated:
             return Response(
-                {'error': 'Authentication required or customer profile not found'},
+                {'error': 'Authentication required'},
                 status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if not hasattr(request.user, 'customer'):
+            return Response(
+                {'error': 'Customer profile not found'},
+                status=status.HTTP_404_NOT_FOUND
             )
         
         customer = request.user.customer
@@ -134,15 +151,25 @@ class CustomerProfileView(APIView):
         
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            
+            # Return combined user and profile data
+            user_data = UserSerializer(request.user).data
+            user_data.update(serializer.data)
+            return Response(user_data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request):
         """Partial update of customer profile"""
-        if not request.user.is_authenticated or not hasattr(request.user, 'customer'):
+        if not request.user.is_authenticated:
             return Response(
-                {'error': 'Authentication required or customer profile not found'},
+                {'error': 'Authentication required'},
                 status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if not hasattr(request.user, 'customer'):
+            return Response(
+                {'error': 'Customer profile not found'},
+                status=status.HTTP_404_NOT_FOUND
             )
         
         customer = request.user.customer
@@ -154,5 +181,9 @@ class CustomerProfileView(APIView):
         
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            
+            # Return combined user and profile data
+            user_data = UserSerializer(request.user).data
+            user_data.update(serializer.data)
+            return Response(user_data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
