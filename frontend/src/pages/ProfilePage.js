@@ -25,8 +25,10 @@ const ProfilePage = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [profileData, setProfileData] = useState({
-    full_name: '',
-    bio: '',
+    username: '',
+    email: '',
+    first_name: '',
+    last_name: '',
     phone_number: '',
     address: '',
     profile_picture: null,
@@ -35,26 +37,35 @@ const ProfilePage = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!userInfo.access_token) {
+    if (!userInfo?.access_token) {
       navigate('/login');
     } else {
       loadProfileData();
     }
-  }, [userInfo.access_token, navigate]);
+  }, [userInfo, navigate]);
 
   const loadProfileData = async () => {
     try {
       setLoading(true);
+
+      // Use username from context/localStorage
+      setProfileData(prev => ({
+        ...prev,
+        username: userInfo.username || ''
+      }));
+
+      // Fetch extra profile data from backend
       const data = await fetchProfile(userInfo.access_token);
-      
-      setProfileData({
-        full_name: data?.full_name || '',
-        bio: data?.bio || '',
-        phone_number: data?.phone_number || '',
-        address: data?.address || '',
-        profile_picture: null,
-        previewImage: data?.profile_picture || null
-      });
+
+      setProfileData(prev => ({
+        ...prev,
+        email: data?.email ?? prev.email,
+        first_name: data?.first_name ?? prev.first_name,
+        last_name: data?.last_name ?? prev.last_name,
+        phone_number: data?.phone_number ?? prev.phone_number,
+        address: data?.address ?? prev.address,
+        previewImage: data?.profile_picture ?? prev.previewImage
+      }));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -99,7 +110,7 @@ const ProfilePage = () => {
     setSuccess(false);
   };
 
-  if (loading && !profileData.full_name) {
+  if (loading && !profileData.username) {
     return (
       <Container maxWidth="md" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <CircularProgress />
@@ -126,13 +137,12 @@ const ProfilePage = () => {
   );
 };
 
-// Extracted form component for better readability
 const ProfileForm = ({ profileData, loading, onInputChange, onFileChange, onSubmit }) => (
   <Paper elevation={3} sx={{ p: 4 }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
       <Typography variant="h4" component="h1">
         <Person sx={{ verticalAlign: 'middle', mr: 1 }} />
-        {profileData.full_name ? 'Update Profile' : 'Create Profile'}
+        {profileData.first_name ? 'Update Profile' : 'Create Profile'}
       </Typography>
     </Box>
 
@@ -162,7 +172,6 @@ const ProfileForm = ({ profileData, loading, onInputChange, onFileChange, onSubm
   </Paper>
 );
 
-// Extracted profile picture component
 const ProfilePicture = ({ previewImage, onFileChange }) => (
   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
     <Avatar
@@ -192,14 +201,33 @@ const ProfilePicture = ({ previewImage, onFileChange }) => (
   </Box>
 );
 
-// Extracted form fields component
 const ProfileFields = ({ profileData, onInputChange }) => (
   <>
     <TextField
       fullWidth
-      label="Full Name"
-      name="full_name"
-      value={profileData.full_name}
+      label="Username"
+      name="username"
+      value={profileData.username}
+      margin="normal"
+      disabled
+      InputProps={{ style: { backgroundColor: '#f5f5f5' } }}
+    />
+
+    <TextField
+      fullWidth
+      label="Email"
+      name="email"
+      value={profileData.email}
+      margin="normal"
+      disabled
+      InputProps={{ style: { backgroundColor: '#f5f5f5' } }}
+    />
+
+    <TextField
+      fullWidth
+      label="First Name"
+      name="first_name"
+      value={profileData.first_name}
       onChange={onInputChange}
       margin="normal"
       required
@@ -207,14 +235,12 @@ const ProfileFields = ({ profileData, onInputChange }) => (
 
     <TextField
       fullWidth
-      label="Bio"
-      name="bio"
-      value={profileData.bio}
+      label="Last Name"
+      name="last_name"
+      value={profileData.last_name}
       onChange={onInputChange}
       margin="normal"
-      multiline
-      rows={4}
-      placeholder="Tell us about yourself..."
+      required
     />
 
     <TextField
@@ -239,7 +265,6 @@ const ProfileFields = ({ profileData, onInputChange }) => (
   </>
 );
 
-// Extracted submit button component
 const SubmitButton = ({ loading }) => (
   <Button
     type="submit"
@@ -253,7 +278,6 @@ const SubmitButton = ({ loading }) => (
   </Button>
 );
 
-// Extracted notification component
 const Notification = ({ success, error, onClose }) => (
   <>
     <Snackbar

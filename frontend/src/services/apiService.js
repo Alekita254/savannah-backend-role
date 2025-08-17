@@ -37,10 +37,12 @@ export const fetchProfile = async (access_token) => {
 
 export const saveProfile = async (access_token, profileData) => {
   const formData = new FormData();
-  formData.append("full_name", profileData.full_name);
-  formData.append("bio", profileData.bio);
+  // Add all profile fields
+  formData.append("first_name", profileData.first_name);
+  formData.append("last_name", profileData.last_name);
   formData.append("phone_number", profileData.phone_number);
   formData.append("address", profileData.address);
+  
   if (profileData.profile_picture) {
     formData.append("profile_picture", profileData.profile_picture);
   }
@@ -52,6 +54,9 @@ export const saveProfile = async (access_token, profileData) => {
     },
     body: formData,
   });
-  if (!response.ok) throw new Error("Failed to save profile");
+  
+  if (!response.ok) {
+    throw new Error("Failed to save profile");
+  }
   return await response.json();
 };
