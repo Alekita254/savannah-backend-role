@@ -13,9 +13,14 @@ class CategorySerializer(serializers.ModelSerializer):
         children = obj.get_children()
         serializer = CategorySerializer(children, many=True)
         return serializer.data
+    
+class SimpleCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id', 'name')
 
 class ProductSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True, read_only=True)
+    categories = SimpleCategorySerializer(many=True, read_only=True)
     
     class Meta:
         model = Product

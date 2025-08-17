@@ -162,3 +162,4 @@ class OrderDetail(APIView):
         order = self.get_object(pk)
         order.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
