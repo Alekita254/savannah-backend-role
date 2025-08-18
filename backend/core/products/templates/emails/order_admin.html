@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Order Notification</title>
+</head>
+<body>
+    <h2>New Order Received</h2>
+    <p>Order #{{ order.id }}</p>
+    <p>Customer: {{ order.customer.user.username }}</p>
+    <p>Shipping Address: {{ order.shipping_address }}</p>
+    <p>Total: KES {{ order.total }}</p>
+    
+    <h3>Order Items:</h3>
+    <ul>
+        {% for item in items %}
+        <li>{{ item.quantity }} x {{ item.product.name }} - KES {{ item.price }}</li>
+        {% endfor %}
+    </ul>
+    
+    <p>Login to admin panel to process the order.</p>
+</body>
+</html>

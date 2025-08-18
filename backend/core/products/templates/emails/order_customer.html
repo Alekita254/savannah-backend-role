@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Confirmation</title>
+</head>
+<body>
+    <h2>Thank you for your order!</h2>
+    <p>Your order #{{ order.id }} has been received.</p>
+    <p>We'll process it and notify you when it's shipped.</p>
+    
+    <h3>Order Summary:</h3>
+    <ul>
+        {% for item in items %}
+        <li>{{ item.quantity }} x {{ item.product.name }} - KES {{ item.price }}</li>
+        {% endfor %}
+    </ul>
+    
+    <p><strong>Total: KES {{ order.total }}</strong></p>
+    <p>Shipping Address: {{ order.shipping_address }}</p>
+    
+    <p>If you have any questions, please contact our support team.</p>
+</body>
+</html>
