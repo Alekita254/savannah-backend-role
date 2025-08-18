@@ -19,8 +19,27 @@ class SimpleCategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ('id', 'name')
 
+# class ProductSerializer(serializers.ModelSerializer):
+#     categories = SimpleCategorySerializer(many=True, read_only=True)
+#     image = serializers.SerializerMethodField()
+    
+#     class Meta:
+#         model = Product
+#         fields = ('id', 'name', 'description', 'price', 'categories', 
+#                  'stock', 'available', 'image', 'created_at', 'updated_at')
+        
+#     def get_image(self, product):
+#         request = self.context.get('request')
+#         if product.image and hasattr (product.image, 'url'):
+#             image_url =  product.image.url
+#             return request.build_absolute_uri(image_url) if request else image_url
+#         return None
 class ProductSerializer(serializers.ModelSerializer):
-    categories = SimpleCategorySerializer(many=True, read_only=True)
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Category.objects.all(),
+        required=False
+    )
     image = serializers.SerializerMethodField()
     
     class Meta:
@@ -30,11 +49,24 @@ class ProductSerializer(serializers.ModelSerializer):
         
     def get_image(self, product):
         request = self.context.get('request')
-        if product.image and hasattr (product.image, 'url'):
-            image_url =  product.image.url
+        if product.image and hasattr(product.image, 'url'):
+            image_url = product.image.url
             return request.build_absolute_uri(image_url) if request else image_url
         return None
 
+    def create(self, validated_data):
+        categories = validated_data.pop('categories', [])
+        product = Product.objects.create(**validated_data)
+        product.categories.set(categories)
+        return product
+
+    def update(self, instance, validated_data):
+        categories = validated_data.pop('categories', None)
+        instance = super().update(instance, validated_data)
+        if categories is not None:
+            instance.categories.set(categories)
+        return instance
+    
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
     
