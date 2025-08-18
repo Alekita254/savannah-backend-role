@@ -21,11 +21,19 @@ class SimpleCategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     categories = SimpleCategorySerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
         fields = ('id', 'name', 'description', 'price', 'categories', 
                  'stock', 'available', 'image', 'created_at', 'updated_at')
+        
+    def get_image(self, product):
+        request = self.context.get('request')
+        if product.image and hasattr (product.image, 'url'):
+            image_url =  product.image.url
+            return request.build_absolute_uri(image_url) if request else image_url
+        return None
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)

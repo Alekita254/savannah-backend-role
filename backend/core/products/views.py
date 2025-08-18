@@ -57,7 +57,7 @@ class ProductList(APIView):
         category = request.query_params.get('category')
         if category:
             queryset = queryset.filter(categories__id=category)
-        serializer = ProductSerializer(queryset, many=True)
+        serializer = ProductSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
     
     def post(self, request):
@@ -75,7 +75,7 @@ class ProductDetail(APIView):
     
     def get(self, request, pk):
         product = self.get_object(pk)
-        serializer = ProductSerializer(product)
+        serializer = ProductSerializer(product, context={'request': request})
         return Response(serializer.data)
     
     def put(self, request, pk):
