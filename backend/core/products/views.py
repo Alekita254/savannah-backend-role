@@ -2,12 +2,8 @@ from rest_framework.views import APIView
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Category, Product, Order, OrderItem
-from .serializers import (
-    CategorySerializer, 
-    ProductSerializer, 
-    OrderSerializer
-)
+from .models import *
+from .serializers import *
 from myuser.models import Customer
 
 class CategoryList(APIView):
@@ -163,3 +159,115 @@ class OrderDetail(APIView):
         order.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+class CartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_cart(self, user):
+        customer = Customer.objects.get(user=user)
+        cart, created = Cart.objects.get_or_create(customer=customer)
+        return cart
+    
+    def get(self, request):
+        cart = self.get_cart(request.user)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+class AddToCartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        quantity = request.data.get('quantity', 1)
+        
+        product = get_object_or_404(Product, id=product_id, available=True)
+        customer = Customer.objects.get(user=request.user)
+        cart, _ = Cart.objects.get_or_create(customer=customer)
+        
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantity': quantity}
+        )
+        
+        if not created:
+            cart_item.quantity += int(quantity)
+            cart_item.save()
+        
+        serializer = CartSerializer(cart)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RemoveFromCartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        customer = Customer.objects.get(user=request.user)
+        cart = get_object_or_404(Cart, customer=customer)
+        
+        cart_item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
+        cart_item.delete()
+        
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+class UpdateCartItemView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        quantity = request.data.get('quantity', 1)
+        
+        if int(quantity) < 1:
+            return Response(
+                {"error": "Quantity must be at least 1"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        customer = Customer.objects.get(user=request.user)
+        cart = get_object_or_404(Cart, customer=customer)
+        cart_item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
+        
+        cart_item.quantity = quantity
+        cart_item.save()
+        
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+class CheckoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        customer = Customer.objects.get(user=request.user)
+        cart = get_object_or_404(Cart, customer=customer)
+        
+        if cart.items.count() == 0:
+            return Response(
+                {"error": "Your cart is empty"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create order from cart
+        order = Order.objects.create(
+            customer=customer,
+            shipping_address=request.data.get('shipping_address', ''),
+            status='P'
+        )
+        
+        # Transfer cart items to order items
+        for cart_item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product=cart_item.product,
+                quantity=cart_item.quantity,
+                price=cart_item.product.price * cart_item.quantity
+            )
+        
+        # Calculate total
+        order.total = sum(item.price * item.quantity for item in order.items.all())
+        order.save()
+        
+        # Clear the cart
+        cart.items.all().delete()
+        
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

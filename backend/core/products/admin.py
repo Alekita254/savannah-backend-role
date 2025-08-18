@@ -1,6 +1,6 @@
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
-from .models import Category, Product, Order, OrderItem
+from .models import *
 
 @admin.register(Category)
 class CategoryAdmin(MPTTModelAdmin):
@@ -25,3 +25,17 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ('status', 'created_at')
     search_fields = ('customer__user__username', 'id')
     inlines = [OrderItemInline]
+
+class CartItemInline(admin.TabularInline):
+    model = CartItem
+    extra = 0
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ('customer', 'total', 'created_at')
+    inlines = [CartItemInline]
+    readonly_fields = ('total',)
+    
+    def total(self, obj):
+        return obj.total
+    total.short_description = 'Total Value'
