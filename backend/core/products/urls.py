@@ -20,4 +20,7 @@ urlpatterns = [
     path('cart/remove/', views.RemoveFromCartView.as_view(), name='remove-from-cart'),
     path('cart/update/', views.UpdateCartItemView.as_view(), name='update-cart-item'),
     path('cart/checkout/', views.CheckoutView.as_view(), name='checkout'),
+
+    path('sms-test/', views.SMSTestView.as_view(), name='sms-test'),
+
 ]
