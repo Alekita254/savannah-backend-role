@@ -1,5 +1,6 @@
     
 from rest_framework.views import APIView
+from rest_framework import generics, exceptions
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -12,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class LoginWithGoogle(APIView):
+class LoginWithGoogle(generics.ListCreateAPIView):
     def post(self, request):
         code = request.data.get('code')
         
@@ -48,9 +49,10 @@ class LoginWithGoogle(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-class RegisterView(APIView):
+class RegisterView(generics.ListCreateAPIView):
+    serializer_class=RegisterSerializer
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
@@ -65,9 +67,10 @@ class RegisterView(APIView):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(APIView):
+class LoginView(generics.ListCreateAPIView):
+    serializer_class = LoginSerializer
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer =self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data
             refresh = RefreshToken.for_user(user)

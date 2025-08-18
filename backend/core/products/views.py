@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework import generics, exceptions
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -12,89 +13,95 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class CategoryList(APIView):
+class CategoryList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = CategorySerializer
     
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         categories = Category.objects.all()
-        serializer = CategorySerializer(categories, many=True)
+        serializer = self.serializer_class(categories, many=True)
         return Response(serializer.data)
     
-    def post(self, request):
-        serializer = CategorySerializer(data=request.data)
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class CategoryDetail(APIView):
+class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = CategorySerializer
+
     
-    def get_object(self, pk):
+    def get_object(self, pk, *args, **kwargs):
         return get_object_or_404(Category, pk=pk)
     
-    def get(self, request, pk):
+    def get(self, request, pk, *args, **kwargs):
         category = self.get_object(pk)
-        serializer = CategorySerializer(category)
+        serializer = self.serializer_class(category)
         return Response(serializer.data)
     
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         category = self.get_object(pk)
-        serializer = CategorySerializer(category, data=request.data)
+        serializer = self.serializer_class(category, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         category = self.get_object(pk)
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class ProductList(APIView):
+class ProductList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = ProductSerializer
     
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         queryset = Product.objects.filter(available=True)
         category = request.query_params.get('category')
         if category:
             queryset = queryset.filter(categories__id=category)
-        serializer = ProductSerializer(queryset, many=True, context={'request': request})
+        serializer = self.serializer_class(queryset, many=True, context={'request': request})
         return Response(serializer.data)
     
     def post(self, request):
-        serializer = ProductSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ProductDetail(APIView):
+class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = ProductSerializer
     
-    def get_object(self, pk):
+    def get_object(self, pk, *args, **kwargs):
         return get_object_or_404(Product, pk=pk)
     
-    def get(self, request, pk):
+    def get(self, request, pk, *args, **kwargs):
         product = self.get_object(pk)
-        serializer = ProductSerializer(product, context={'request': request})
+        serializer = self.serializer_class(product, context={'request': request})
         return Response(serializer.data)
     
     def put(self, request, pk):
         product = self.get_object(pk)
-        serializer = ProductSerializer(product, data=request.data)
+        serializer = self.serializer_class(product, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def delete(self, request, pk):
+    def delete(self, request, pk, *args, **kwargs):
         product = self.get_object(pk)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class OrderList(APIView):
+class OrderList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OrderSerializer
     
     def get_queryset(self):
         user = self.request.user
@@ -102,13 +109,13 @@ class OrderList(APIView):
             return Order.objects.all()
         return Order.objects.filter(customer__user=user)
     
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         orders = self.get_queryset()
-        serializer = OrderSerializer(orders, many=True)
+        serializer = self.serializer_class(orders, many=True)
         return Response(serializer.data)
     
     def post(self, request):
-        serializer = OrderSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             # Handle order items
             items_data = request.data.get('items', [])
@@ -136,8 +143,9 @@ class OrderList(APIView):
 
 
 
-class OrderDetail(APIView):
+class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OrderSerializer
     
     def get_queryset(self):
         user = self.request.user
@@ -160,7 +168,7 @@ class OrderDetail(APIView):
                     'customer': order.customer.user.username
                 }
             )
-            serializer = OrderSerializer(order)
+            serializer = self.serializer_class(order)
             return Response(serializer.data)
         except Exception as e:
             logger.error(
@@ -182,7 +190,7 @@ class OrderDetail(APIView):
         old_status = order.status
         
         try:
-            serializer = OrderSerializer(order, data=request.data)
+            serializer = self.serializer_class(order, data=request.data)
             
             if serializer.is_valid():
                 serializer.save()
@@ -278,8 +286,9 @@ class OrderDetail(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-class CartView(APIView):
+class CartView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartSerializer
     
     def get_cart(self, user):
         customer = Customer.objects.get(user=user)
@@ -288,11 +297,12 @@ class CartView(APIView):
     
     def get(self, request):
         cart = self.get_cart(request.user)
-        serializer = CartSerializer(cart)
+        serializer = self.serializer_class(cart)
         return Response(serializer.data)
 
-class AddToCartView(APIView):
+class AddToCartView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartSerializer
     
     def post(self, request):
         product_id = request.data.get('product_id')
@@ -312,11 +322,12 @@ class AddToCartView(APIView):
             cart_item.quantity += int(quantity)
             cart_item.save()
         
-        serializer = CartSerializer(cart)
+        serializer = self.serializer_class(cart)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class RemoveFromCartView(APIView):
+class RemoveFromCartView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartSerializer
     
     def post(self, request):
         product_id = request.data.get('product_id')
@@ -326,7 +337,7 @@ class RemoveFromCartView(APIView):
         cart_item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
         cart_item.delete()
         
-        serializer = CartSerializer(cart)
+        serializer = self.serializer_class(cart)
         return Response(serializer.data)
 
 class UpdateCartItemView(APIView):
@@ -353,8 +364,9 @@ class UpdateCartItemView(APIView):
         return Response(serializer.data)
 
 
-class CheckoutView(APIView):
+class CheckoutView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OrderSerializer
     
     def post(self, request):
         customer = Customer.objects.get(user=request.user)
@@ -464,7 +476,7 @@ class CheckoutView(APIView):
                 }
             )
             
-            serializer = OrderSerializer(order)
+            serializer = self.serializer_class(order)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:

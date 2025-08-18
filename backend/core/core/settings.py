@@ -17,7 +17,7 @@ SECRET_KEY = 'django-insecure-^o-hxi#ao02mnhp@($y^uxf7g%ty(i06%+(tu7yf#car=s*)hm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -249,4 +249,8 @@ LOGGING = {
             'level': 'WARNING',
         },
     },
+}
+
+SWAGGER_SETTINGS = {
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
 }
