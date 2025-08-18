@@ -31,6 +31,9 @@ import {
 } from "@mui/icons-material";
 import { useUser } from "../context/UserContext";
 import { fetchCategories } from "../services/apiService";
+import GoogleLoginButton from "../components/GoogleLoginButton";
+
+
 
 const CategoryMenuItem = ({ category, depth = 0, onClose }) => {
   const [expanded, setExpanded] = useState(false);
@@ -230,9 +233,12 @@ const Header = () => {
               </Menu>
             </>
           ) : (
-            <Button component={Link} to="/login" variant="outlined">
-              Login
-            </Button>
+                <>
+              <Button component={Link} to="/login" variant="outlined">
+                Login
+              </Button>
+              <GoogleLoginButton />
+            </>
           )}
         </Box>
       </Toolbar>

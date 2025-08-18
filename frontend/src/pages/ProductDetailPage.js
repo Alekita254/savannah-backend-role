@@ -18,6 +18,12 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+
+// const Alert = React.forwardRef(function Alert(props, ref) {
+//   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+// });
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -25,6 +31,10 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -44,12 +54,24 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = async () => {
     try {
+      setAddingToCart(true);
       await addToCart(product.id, quantity);
-      alert(`${quantity} ${product.name}(s) added to cart!`);
+      setSnackbarMessage(`${quantity} ${product.name}(s) added to cart!`);
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
     } catch (error) {
-      alert(error.message);
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setAddingToCart(false);
     }
   };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -184,7 +206,22 @@ const ProductDetailPage = () => {
           </Grid>
         </Grid>
       </Paper>
+        <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
+    // </Box>
   );
 };
 

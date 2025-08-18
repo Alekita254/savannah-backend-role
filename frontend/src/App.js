@@ -85,6 +85,9 @@ import { verifyToken } from "./services/apiService";
 import { UserProvider } from "./context/UserContext";
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import CartPage from './pages/CartPage';
+import OrdersPage from './pages/OrdersPage';
+
 
 function App() {
   const clientId =
@@ -136,6 +139,10 @@ function App() {
                 path="/products/:productId"
                 element={<ProductDetailPage />}
               />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+
+
             </Routes>
           </div>
         </GoogleOAuthProvider>

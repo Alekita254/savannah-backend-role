@@ -173,7 +173,7 @@ export const addToCart = async (productId, quantity = 1) => {
       throw new Error("You need to be logged in to add items to cart");
     }
 
-    const response = await fetch("/cart/add/", {
+    const response = await fetch("/products/cart/add/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -189,6 +189,139 @@ export const addToCart = async (productId, quantity = 1) => {
     return await response.json();
   } catch (error) {
     console.error("Error adding to cart:", error);
+    throw error;
+  }
+};
+
+export const getCart = async () => {
+  try {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      throw new Error("You need to be logged in to view your cart");
+    }
+
+    const response = await fetch("/products/cart/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch cart: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching cart:", error);
+    throw error;
+  }
+};
+
+export const updateCartItem = async (itemId, quantity) => {
+  try {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      throw new Error("You need to be logged in to update your cart");
+    }
+
+    const response = await fetch("/products/cart/update/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`
+      },
+      body: JSON.stringify({ item_id: itemId, quantity })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update cart: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating cart:", error);
+    throw error;
+  }
+};
+
+export const removeCartItem = async (itemId) => {
+  try {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      throw new Error("You need to be logged in to remove items from cart");
+    }
+
+    const response = await fetch("/products/cart/remove/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`
+      },
+      body: JSON.stringify({ item_id: itemId })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to remove item from cart: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error removing item from cart:", error);
+    throw error;
+  }
+};
+
+export const checkoutCart = async (shippingInfo) => {
+  try {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      throw new Error("You need to be logged in to checkout");
+    }
+
+    const response = await fetch("/products/cart/checkout/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`
+      },
+      body: JSON.stringify(shippingInfo)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Checkout failed: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error during checkout:", error);
+    throw error;
+  }
+};
+
+export const fetchOrders = async () => {
+  try {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      throw new Error("You need to be logged in to view your orders");
+    }
+
+    const response = await fetch("/products/orders/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch orders: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching orders:", error);
     throw error;
   }
 };
