@@ -29,7 +29,7 @@ const ProfilePage = () => {
     email: '',
     first_name: '',
     last_name: '',
-    phone_number: '',
+    phone: '',
     address: '',
     profile_picture: null,
     previewImage: null
@@ -62,7 +62,7 @@ const ProfilePage = () => {
         email: data?.email ?? prev.email,
         first_name: data?.first_name ?? prev.first_name,
         last_name: data?.last_name ?? prev.last_name,
-        phone_number: data?.phone_number ?? prev.phone_number,
+        phone: data?.phone ?? prev.phone,
         address: data?.address ?? prev.address,
         previewImage: data?.profile_picture ?? prev.previewImage
       }));
@@ -246,8 +246,8 @@ const ProfileFields = ({ profileData, onInputChange }) => (
     <TextField
       fullWidth
       label="Phone Number"
-      name="phone_number"
-      value={profileData.phone_number}
+      name="phone"
+      value={profileData.phone}
       onChange={onInputChange}
       margin="normal"
     />

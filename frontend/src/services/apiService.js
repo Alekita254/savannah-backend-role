@@ -37,10 +37,9 @@ export const fetchProfile = async (access_token) => {
 
 export const saveProfile = async (access_token, profileData) => {
   const formData = new FormData();
-  // Add all profile fields
   formData.append("first_name", profileData.first_name);
   formData.append("last_name", profileData.last_name);
-  formData.append("phone_number", profileData.phone_number);
+  formData.append("phone", profileData.phone);
   formData.append("address", profileData.address);
   
   if (profileData.profile_picture) {
