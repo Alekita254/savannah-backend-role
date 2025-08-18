@@ -232,7 +232,7 @@ export const updateCartItem = async (itemId, quantity) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${access_token}`
       },
-      body: JSON.stringify({ item_id: itemId, quantity })
+      body: JSON.stringify({ product_id: itemId, quantity })
     });
 
     if (!response.ok) {
@@ -259,7 +259,7 @@ export const removeCartItem = async (itemId) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${access_token}`
       },
-      body: JSON.stringify({ item_id: itemId })
+      body: JSON.stringify({ product_id: itemId })
     });
 
     if (!response.ok) {
