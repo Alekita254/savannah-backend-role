@@ -113,3 +113,82 @@ export const fetchCategories = async () => {
     throw new Error("Failed to load categories. Please try again later.");
   }
 };
+
+// Fetch all products
+export const fetchProducts = async (categoryId = null) => {
+  try {
+    const url = categoryId 
+      ? `/products/products/?category=${categoryId}`
+      : '/products/products/';
+      
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(localStorage.getItem('access_token') && {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        })
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+    throw new Error("Failed to load products. Please try again later.");
+  }
+};
+
+// Fetch single product by ID
+export const fetchProductById = async (productId) => {
+  try {
+    const response = await fetch(`/products/products/${productId}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(localStorage.getItem('access_token') && {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        })
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch product:", error);
+    throw new Error("Failed to load product details. Please try again later.");
+  }
+};
+
+export const addToCart = async (productId, quantity = 1) => {
+  try {
+    const access_token = localStorage.getItem('access_token');
+    if (!access_token) {
+      throw new Error("You need to be logged in to add items to cart");
+    }
+
+    const response = await fetch("/cart/add/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`
+      },
+      body: JSON.stringify({ product_id: productId, quantity })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to add to cart: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    throw error;
+  }
+};

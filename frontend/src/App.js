@@ -82,17 +82,20 @@ import Header from "./components/Header";
 import LogoutPage from "./pages/LogoutPage";
 import ProfilePage from "./pages/ProfilePage";
 import { verifyToken } from "./services/apiService";
-import { UserProvider } from "./context/UserContext"; // Updated import
+import { UserProvider } from "./context/UserContext";
+import ProductsPage from './pages/ProductsPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 function App() {
-  const clientId = "722584951999-to2ng8jbe10p2lm2e4ih074k69lkq2sj.apps.googleusercontent.com";
+  const clientId =
+    "722584951999-to2ng8jbe10p2lm2e4ih074k69lkq2sj.apps.googleusercontent.com";
   const [userInfo, setUserInfo] = useState({});
 
   useEffect(() => {
     const checkAuth = async () => {
       const access_token = localStorage.getItem("access_token");
       const username = localStorage.getItem("username");
-      
+
       if (access_token) {
         const isValid = await verifyToken(access_token);
         setUserInfo({
@@ -113,19 +116,31 @@ function App() {
 
   return (
     <BrowserRouter>
-      <UserProvider value={{ userInfo, updateUserInfo }}> {/* Updated to UserProvider */}
+      <UserProvider value={{ userInfo, updateUserInfo }}>
+        {" "}
+        {/* Updated to UserProvider */}
         <GoogleOAuthProvider clientId={clientId}>
           <div className="App">
             <Header />
             <Routes>
-              <Route path="/" exact element={<PostListPage />} />
+              <Route path="/" exact element={<ProductsPage  />} />
               {/* <Route path="/blog/post/:postId/" element={<Post  DetailPage />} /> */}
               <Route path="/logout/" element={<LogoutPage />} />
               <Route path="/profile/" element={<ProfilePage />} />
+              <Route path="/products" exact element={<ProductsPage />} />
+              <Route
+                path="/products/category/:categoryId"
+                element={<ProductsPage />}
+              />
+              <Route
+                path="/products/:productId"
+                element={<ProductDetailPage />}
+              />
             </Routes>
           </div>
         </GoogleOAuthProvider>
-      </UserProvider> {/* Updated to UserProvider */}
+      </UserProvider>{" "}
+      {/* Updated to UserProvider */}
     </BrowserRouter>
   );
 }
