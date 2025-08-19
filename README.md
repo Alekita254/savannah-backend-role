@@ -92,8 +92,7 @@ pytest --cov=. --cov-report=html
 
 ```bash
 cd frontend
-npm test  # runs Vitest / Jest with coverage
-
+npm test  
 ```
 
 ## CI / CD (GitHub Actions)
