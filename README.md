@@ -18,7 +18,7 @@ A full-stack web application built with **Django** (backend) and **React** (fron
 | CI/CD       | GitHub Actions, Docker, Kubernetes |
 | Testing     | pytest, pytest-cov (backend); |
 | DB          | PostgreSQL (local / container) |
-| Cache       | Redis (if applicable) |
+| Cache       | Redis |
 
 ##  Local Setup (Development)
 
