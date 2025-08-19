@@ -82,3 +82,15 @@ Then edit .env with your configuration
 3. Test with coverage:
     ```
     pytest --cov=.
+
+### Kubernetes dashboard (Minikube)
+
+1. ``` minikube dashboard ```
+2. ``` kubectl logs -f deployment/core ```
+
+### Cleanup
+1. ``` docker-compose down -v ```
+
+2. ``` minikube delete ```
+
+
