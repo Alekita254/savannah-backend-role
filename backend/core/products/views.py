@@ -1,3 +1,20 @@
+"""
+Product, Category, Order, and Cart API Views
+
+This module provides REST API endpoints for:
+- Category CRUD operations
+- Product CRUD operations and filtering
+- Order management (list, create, update, delete)
+- Cart management (add, remove, update items, checkout)
+- SMS notification testing
+
+Design:
+- Uses Django REST Framework generic views and APIView.
+- Permissions are enforced for authenticated actions.
+- Logging is used for audit and debugging.
+- Notification hooks are integrated for order status changes.
+"""
+
 from rest_framework.views import APIView
 from rest_framework import generics, exceptions
 from rest_framework import permissions, status
@@ -14,15 +31,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 class CategoryList(generics.ListCreateAPIView):
+    """
+    API endpoint for listing and creating product categories.
+
+    - GET: List all categories (public)
+    - POST: Create a new category (authenticated)
+    """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = CategorySerializer
     
     def get(self, request, *args, **kwargs):
+        """
+        List all categories.
+        """
         categories = Category.objects.all()
         serializer = self.serializer_class(categories, many=True)
         return Response(serializer.data)
     
     def post(self, request, *args, **kwargs):
+        """
+        Create a new category.
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -30,19 +59,34 @@ class CategoryList(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API endpoint for retrieving, updating, or deleting a category.
+
+    - GET: Retrieve category details
+    - PUT: Update category
+    - DELETE: Delete category
+    """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = CategorySerializer
 
-    
     def get_object(self, pk, *args, **kwargs):
+        """
+        Helper to fetch a category by primary key.
+        """
         return get_object_or_404(Category, pk=pk)
     
     def get(self, request, pk, *args, **kwargs):
+        """
+        Retrieve a single category.
+        """
         category = self.get_object(pk)
         serializer = self.serializer_class(category)
         return Response(serializer.data)
     
     def put(self, request, pk, *args, **kwargs):
+        """
+        Update a category.
+        """
         category = self.get_object(pk)
         serializer = self.serializer_class(category, data=request.data)
         if serializer.is_valid():
@@ -51,15 +95,27 @@ class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk, *args, **kwargs):
+        """
+        Delete a category.
+        """
         category = self.get_object(pk)
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ProductList(generics.ListCreateAPIView):
+    """
+    API endpoint for listing and creating products.
+
+    - GET: List all available products, optionally filter by category
+    - POST: Create a new product (authenticated)
+    """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = ProductSerializer
     
     def get(self, request, *args, **kwargs):
+        """
+        List all available products, with optional category filter.
+        """
         queryset = Product.objects.filter(available=True)
         category = request.query_params.get('category')
         if category:
@@ -68,6 +124,9 @@ class ProductList(generics.ListCreateAPIView):
         return Response(serializer.data)
     
     def post(self, request):
+        """
+        Create a new product.
+        """
         serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -75,18 +134,34 @@ class ProductList(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API endpoint for retrieving, updating, or deleting a product.
+
+    - GET: Retrieve product details
+    - PUT: Update product
+    - DELETE: Delete product
+    """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = ProductSerializer
     
     def get_object(self, pk, *args, **kwargs):
+        """
+        Helper to fetch a product by primary key.
+        """
         return get_object_or_404(Product, pk=pk)
     
     def get(self, request, pk, *args, **kwargs):
+        """
+        Retrieve a single product.
+        """
         product = self.get_object(pk)
         serializer = self.serializer_class(product, context={'request': request})
         return Response(serializer.data)
     
     def put(self, request, pk):
+        """
+        Update a product.
+        """
         product = self.get_object(pk)
         serializer = self.serializer_class(product, data=request.data)
         if serializer.is_valid():
@@ -95,26 +170,44 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk, *args, **kwargs):
+        """
+        Delete a product.
+        """
         product = self.get_object(pk)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class OrderList(generics.ListCreateAPIView):
+    """
+    API endpoint for listing and creating orders.
+
+    - GET: List orders for the authenticated user (or all if staff)
+    - POST: Create a new order with items
+    """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
     
     def get_queryset(self):
+        """
+        Return orders for the current user, or all if staff.
+        """
         user = self.request.user
         if user.is_staff:
             return Order.objects.all()
         return Order.objects.filter(customer__user=user)
     
     def get(self, request, *args, **kwargs):
+        """
+        List orders for the authenticated user.
+        """
         orders = self.get_queryset()
         serializer = self.serializer_class(orders, many=True)
         return Response(serializer.data)
     
     def post(self, request):
+        """
+        Create a new order and its items.
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             # Handle order items
@@ -141,23 +234,37 @@ class OrderList(generics.ListCreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
 class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API endpoint for retrieving, updating, or deleting an order.
+
+    - GET: Retrieve order details
+    - PUT: Update order and send notifications on status change
+    - DELETE: Delete order
+    """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
     
     def get_queryset(self):
+        """
+        Return orders for the current user, or all if staff.
+        """
         user = self.request.user
         if user.is_staff:
             return Order.objects.all()
         return Order.objects.filter(customer__user=user)
     
     def get_object(self, pk):
+        """
+        Helper to fetch an order by primary key.
+        """
         queryset = self.get_queryset()
         return get_object_or_404(queryset, pk=pk)
     
     def get(self, request, pk):
+        """
+        Retrieve a single order.
+        """
         try:
             order = self.get_object(pk)
             logger.info(
@@ -186,6 +293,9 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
             )
     
     def put(self, request, pk):
+        """
+        Update an order. Sends notifications if status changes.
+        """
         order = self.get_object(pk)
         old_status = order.status
         
@@ -196,7 +306,7 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
                 serializer.save()
                 new_status = serializer.data['status']
                 
-                # Log status change
+                # Log status change and send notifications if needed
                 if old_status != new_status:
                     logger.info(
                         f"Order #{order.id} status changed",
@@ -250,6 +360,9 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
             )
     
     def delete(self, request, pk):
+        """
+        Delete an order.
+        """
         order = self.get_object(pk)
         try:
             logger.warning(
@@ -287,24 +400,43 @@ class OrderDetail(generics.RetrieveUpdateDestroyAPIView):
             )
     
 class CartView(generics.ListCreateAPIView):
+    """
+    API endpoint for retrieving the authenticated user's cart.
+
+    - GET: Retrieve cart and its items
+    """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartSerializer
     
     def get_cart(self, user):
+        """
+        Helper to get or create a cart for the user.
+        """
         customer = Customer.objects.get(user=user)
         cart, created = Cart.objects.get_or_create(customer=customer)
         return cart
     
     def get(self, request):
+        """
+        Retrieve the user's cart.
+        """
         cart = self.get_cart(request.user)
         serializer = self.serializer_class(cart)
         return Response(serializer.data)
 
 class AddToCartView(generics.ListCreateAPIView):
+    """
+    API endpoint for adding a product to the user's cart.
+
+    - POST: Add product to cart or update quantity
+    """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartSerializer
     
     def post(self, request):
+        """
+        Add a product to the cart or update its quantity.
+        """
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
         
@@ -326,10 +458,18 @@ class AddToCartView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class RemoveFromCartView(generics.ListCreateAPIView):
+    """
+    API endpoint for removing a product from the user's cart.
+
+    - POST: Remove product from cart
+    """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartSerializer
     
     def post(self, request):
+        """
+        Remove a product from the cart.
+        """
         product_id = request.data.get('product_id')
         customer = Customer.objects.get(user=request.user)
         cart = get_object_or_404(Cart, customer=customer)
@@ -341,9 +481,17 @@ class RemoveFromCartView(generics.ListCreateAPIView):
         return Response(serializer.data)
 
 class UpdateCartItemView(APIView):
+    """
+    API endpoint for updating the quantity of a cart item.
+
+    - POST: Update quantity of a product in the cart
+    """
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
+        """
+        Update the quantity of a cart item.
+        """
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
         
@@ -363,12 +511,19 @@ class UpdateCartItemView(APIView):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
-
 class CheckoutView(generics.ListCreateAPIView):
+    """
+    API endpoint for checking out the user's cart and creating an order.
+
+    - POST: Convert cart to order, clear cart, send notifications
+    """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
     
     def post(self, request):
+        """
+        Checkout the cart: create an order, clear cart, send notifications.
+        """
         customer = Customer.objects.get(user=request.user)
         cart = get_object_or_404(Cart, customer=customer)
         
@@ -496,14 +651,16 @@ class CheckoutView(generics.ListCreateAPIView):
             )
 
 class SMSTestView(APIView):
+    """
+    API endpoint for testing SMS sending via Africa's Talking.
+
+    - GET: Send a test SMS to a hardcoded number
+    """
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
         """
-        Simple SMS test endpoint
-        Returns:
-        - Success: If SMS was sent successfully
-        - Error: If there was any issue
+        Send a test SMS using Africa's Talking API.
         """
         try:
             # Initialize Africa's Talking
@@ -532,4 +689,3 @@ class SMSTestView(APIView):
                 'message': 'Failed to send SMS',
                 'error': str(e)
             }, status=400)
-        

@@ -1,4 +1,18 @@
-    
+"""
+Views for user authentication and profile management.
+
+This module provides API endpoints for:
+- Google OAuth login
+- User registration and login (JWT)
+- Customer profile CRUD operations
+
+Design:
+- Uses Django REST Framework generic views and APIView.
+- JWT authentication via SimpleJWT.
+- Google OAuth handled via utility functions.
+- Profile endpoints require authentication.
+"""
+
 from rest_framework.views import APIView
 from rest_framework import generics, exceptions
 from rest_framework.response import Response
@@ -14,7 +28,23 @@ logger = logging.getLogger(__name__)
 
 
 class LoginWithGoogle(generics.ListCreateAPIView):
+    """
+    API endpoint for logging in with Google OAuth.
+
+    Expects an authorization code from the frontend, exchanges it for user info,
+    creates or retrieves the user, and returns JWT tokens.
+    """
     def post(self, request):
+        """
+        Handle POST request for Google login.
+
+        Request data:
+            - code: Google OAuth authorization code
+
+        Returns:
+            - access_token, refresh_token, and user info on success
+            - error message on failure
+        """
         code = request.data.get('code')
         
         if not code:
@@ -50,8 +80,24 @@ class LoginWithGoogle(generics.ListCreateAPIView):
             )
 
 class RegisterView(generics.ListCreateAPIView):
-    serializer_class=RegisterSerializer
+    """
+    API endpoint for user registration.
+
+    Accepts user registration data, creates a new user, and returns JWT tokens.
+    """
+    serializer_class = RegisterSerializer
+
     def post(self, request):
+        """
+        Handle POST request for user registration.
+
+        Request data:
+            - email, password, first_name, last_name, etc.
+
+        Returns:
+            - JWT tokens and user info on success
+            - validation errors on failure
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -68,9 +114,25 @@ class RegisterView(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(generics.ListCreateAPIView):
+    """
+    API endpoint for user login.
+
+    Accepts user credentials, authenticates, and returns JWT tokens.
+    """
     serializer_class = LoginSerializer
+
     def post(self, request):
-        serializer =self.serializer_class(data=request.data)
+        """
+        Handle POST request for user login.
+
+        Request data:
+            - email/username and password
+
+        Returns:
+            - JWT tokens and user info on success
+            - validation errors on failure
+        """
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data
             refresh = RefreshToken.for_user(user)
@@ -87,9 +149,24 @@ class LoginView(generics.ListCreateAPIView):
 
 class CustomerProfileView(APIView):
     """
-    Handles retrieval, creation and updates of customer profile information
+    API endpoint for customer profile management.
+
+    Supports:
+    - GET: Retrieve profile
+    - POST: Create profile
+    - PUT: Full update
+    - PATCH: Partial update
+
+    Requires authentication.
     """
     def get(self, request):
+        """
+        Retrieve the authenticated user's profile.
+
+        Returns:
+            - Combined user and profile data
+            - Error if not authenticated
+        """
         if not request.user.is_authenticated:
             return Response(
                 {'error': 'Authentication required'},
@@ -107,7 +184,13 @@ class CustomerProfileView(APIView):
         return Response(user_data)
 
     def post(self, request):
-        """Create customer profile after initial signup"""
+        """
+        Create a customer profile for the authenticated user.
+
+        Returns:
+            - Combined user and profile data on success
+            - Error if profile exists or not authenticated
+        """
         if not request.user.is_authenticated:
             return Response(
                 {'error': 'Authentication required'},
@@ -133,7 +216,13 @@ class CustomerProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
-        """Full update of customer profile"""
+        """
+        Fully update the authenticated user's customer profile.
+
+        Returns:
+            - Updated user and profile data on success
+            - Error if profile not found or not authenticated
+        """
         if not request.user.is_authenticated:
             return Response(
                 {'error': 'Authentication required'},
@@ -162,7 +251,13 @@ class CustomerProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request):
-        """Partial update of customer profile"""
+        """
+        Partially update the authenticated user's customer profile.
+
+        Returns:
+            - Updated user and profile data on success
+            - Error if profile not found or not authenticated
+        """
         if not request.user.is_authenticated:
             return Response(
                 {'error': 'Authentication required'},

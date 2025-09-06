@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     # installed apps
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_swagger',
+    'corsheaders',
     'drf_yasg',
     'mptt',
 
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -53,6 +54,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
+
+CORS_ALLOW_ALL_ORIGINS = True 
 
 TEMPLATES = [
     {
@@ -86,11 +89,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', ''),
+        'NAME': os.getenv("DB_NAME", "savannahtest"),
+        'USER': os.getenv("DB_USER", "savannahuser"),
+        'PASSWORD': os.getenv("DB_PASSWORD", "postgres"),
+        'HOST': os.getenv("DB_HOST", "db"),
+        'PORT': os.getenv("DB_PORT", "5432"),
     }
 }
 
@@ -260,12 +263,12 @@ SWAGGER_SETTINGS = {
     'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
 }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://redis:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }

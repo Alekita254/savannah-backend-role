@@ -79,4 +79,4 @@ class GoogleOAuth:
             
         except Exception as e:
             logger.error(f"User creation failed: {str(e)}")
-            raise AuthenticationFailed(f'User creation failed: {str(e)}')
+            raise AuthenticationFailed(f'User creation failed: {str(e)}')  
