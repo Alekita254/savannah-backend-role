@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 # Initialize Africa's Talking
 africastalking.initialize(
     username=settings.AFRICASTALKING_USERNAME,
-    api_key=settings.AFRICASTALKING_API_KEY
+    api_key=settings.AFRICASTALKING_API_KEY,
 )
 sms = africastalking.SMS
 
@@ -40,10 +40,10 @@ def send_order_notifications(order):
         send_order_email_to_customer(order)
         
         # Send SMS to admin
-        send_order_sms_to_admin(order)
+        # send_order_sms_to_admin(order)
         
         # Send SMS to customer if phone number exists
-        if order.customer.phone_number:
+        if order.customer.phone:
             send_order_sms_to_customer(order)
         else:
             logger.warning(f"No phone number for customer {order.customer.user.username}")
@@ -143,7 +143,7 @@ def send_order_sms_to_customer(order):
         message = (f"Thank you for your order #{order.id}. "
                    f"Total: KES {order.total}. We'll notify you when it's processed.")
         
-        response = sms.send(message, [order.customer.phone])
+        response = sms.send(message, [order.customer.phone], settings.AFRICASTALKING_SENDER_ID)
         log_notification_attempt(
             order,
             "Customer SMS",

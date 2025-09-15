@@ -93,4 +93,11 @@ Then edit .env with your configuration
 
 2. ``` minikube delete ```
 
+``` cd /opt/lampp/htdocs/tests/authentication/GoogleLoginDjangoReact/backend/ ```
+
+then run this command
+
+``` python -m pytest --cov=myuser --cov=products --cov=core --cov-report=term-missing core/ ```
+
+
 

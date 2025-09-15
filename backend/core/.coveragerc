@@ -1,11 +1,16 @@
 [run]
-source = .
-omit = 
+branch = True
+source =
+    ../myuser
+    ../products
+    .
+omit =
     */migrations/*
     */tests/*
     */__init__.py
     manage.py
     */settings.py
+    venv/*
 
 [report]
 exclude_lines =
